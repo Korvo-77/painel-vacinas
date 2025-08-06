@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Estoque de Vacinas</title>
+  <meta http-equiv="refresh" content="60">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .logo {
+      height: 60px;
+    }
+    h1 {
+      margin: 0;
+      color: #00d8ff;
+    }
+    button {
+      background-color: #00d8ff;
+      color: #111;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 1.2em;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+    th {
+      background-color: #222;
+      color: #00d8ff;
+    }
+    .ok { color: #00ff00; }
+    .quase { color: #ffcc00; }
+    .vencida { color: #ff3333; }
+
+    @keyframes blink-red {
+      0% { background-color: #330000; }
+      50% { background-color: #ff0000; }
+      100% { background-color: #330000; }
+    }
+    @keyframes blink-yellow {
+      0% { background-color: #332b00; }
+      50% { background-color: #e6b800; }
+      100% { background-color: #332b00; }
+    }
+    .blink-red { animation: blink-red 3s infinite; }
+    .blink-yellow { animation: blink-yellow 3s infinite; }
+
+    .contadores, .filtros {
+      margin-top: 20px;
+      font-size: 1em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .contadores span {
+      font-weight: bold;
+    }
+    #last-update {
+      margin-top: 10px;
+      text-align: right;
+      font-size: 0.9em;
+      color: #888;
+    }
+    .painel-secundario, .estoque-baixo {
+      width: 48%;
+    }
+    .rodape {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 40px;
+      gap: 4%;
+      flex-wrap: wrap;
+    }
+    .painel-secundario h2, .estoque-baixo h2 {
+      font-size: 1.4em;
+      margin-bottom: 10px;
+    }
+    select {
+      padding: 6px;
+      border-radius: 5px;
+      border: none;
+      background-color: #222;
+      color: #fff;
+    }
+    .estoque-baixo h2 { color: #ff3333; }
+    .painel-secundario h2 { color: #00d8ff; }
+
+    @media (max-width: 768px) {
+      .rodape {
+        flex-direction: column;
+        gap: 20px;
+      }
+      .painel-secundario, .estoque-baixo {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <img src="https://via.placeholder.com/150x60?text=LOGO" alt="Logo da Empresa" class="logo">
+    <h1>📦 Painel de Estoque de Vacinas</h1>
+    <button onclick="document.documentElement.requestFullscreen();">🖥️ Tela Cheia</button>
+  </div>
+
+  <div class="filtros">
+    <div>
+      <label for="filtro">🔍 Filtrar Vacina:</label>
+      <select id="filtro" onchange="filtrarVacinas()">
+        <option value="">Todas</option>
+      </select>
+    </div>
+    <div class="contadores">
+      ✅ OK: <span id="ok-count">0</span> &nbsp;&nbsp;
+      ⚠️ Quase Vencendo: <span id="quase-count">0</span> &nbsp;&nbsp;
+      🚫 Vencidas: <span id="vencida-count">0</span> &nbsp;&nbsp;
+      💉 Total de Doses: <span id="total-doses">0</span>
+    </div>
+  </div>
+
+  <table id="painel">
+    <thead>
+      <tr>
+        <th>Vacina</th>
+        <th>Lote</th>
+        <th>Quantidade</th>
+        <th>Validade</th>
+        <th>Status</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="rodape">
+    <div class="painel-secundario">
+      <h2>🔄 Lotes Alternativos em Estoque</h2>
+      <table id="painel-secundario">
+        <thead>
+          <tr>
+            <th>Vacina</th>
+            <th>Lote</th>
+            <th>Quantidade</th>
+            <th>Validade</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="estoque-baixo">
+      <h2>📉 Vacinas com Estoque Baixo</h2>
+      <table id="estoque-baixo-table">
+        <thead>
+          <tr>
+            <th>Vacina</th>
+            <th>Lote</th>
+            <th>Quantidade</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p id="last-update"></p>
+  <audio id="alerta-audio" src="https://www.soundjay.com/button/sounds/beep-07.mp3" preload="auto"></audio>
+
+  <script>
+    const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbw6YMQxKzF5HfF_OmrU09HVgeAwCS1nJyxbN6rx-wfjK_Tle2AHTstcVF78Dj_yxxtLrQ/exec";
+
+    const corpoTabela = document.querySelector('#painel tbody');
+    const corpoSecundario = document.querySelector('#painel-secundario tbody');
+    const corpoEstoqueBaixo = document.querySelector('#estoque-baixo-table tbody');
+    const filtroSelect = document.getElementById('filtro');
+    const audio = document.getElementById('alerta-audio');
+
+    let dados = [];
+    let ok = 0, quase = 0, vencida = 0, totalDoses = 0;
+    const vacinasUnicas = new Set();
+    const filtroPrincipal = new Map();
+    const candidatosSecundarios = [];
+
+    function fetchDados() {
+      fetch(URL_PLANILHA)
+        .then(response => response.json())
+        .then(json => {
+          dados = json.data || []; // <== adapta ao formato retornado
+          prepararDados();
+          renderizarPainel();
+          renderizarSecundario();
+          atualizarContadores();
+        })
+        .catch(error => {
+          console.error("Erro ao carregar dados:", error);
+        });
+    }
+
+    function prepararDados() {
+      ok = quase = vencida = totalDoses = 0;
+      filtroPrincipal.clear();
+      candidatosSecundarios.length = 0;
+      vacinasUnicas.clear();
+
+      dados.forEach(item => {
+        vacinasUnicas.add(item.vacina);
+        totalDoses += parseInt(item.quantidade);
+        if (!filtroPrincipal.has(item.vacina)) {
+          filtroPrincipal.set(item.vacina, item);
+        } else {
+          const atual = filtroPrincipal.get(item.vacina);
+          const dataAtual = new Date(atual.validade.split("/").reverse().join("-"));
+          const dataNovo = new Date(item.validade.split("/").reverse().join("-"));
+          if (dataNovo < dataAtual) {
+            candidatosSecundarios.push(atual);
+            filtroPrincipal.set(item.vacina, item);
+          } else {
+            candidatosSecundarios.push(item);
+          }
+        }
+      });
+
+      filtroSelect.innerHTML = '<option value="">Todas</option>';
+      vacinasUnicas.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v;
+        option.textContent = v;
+        filtroSelect.appendChild(option);
+      });
+    }
+
+    function renderizarPainel(filtro = "") {
+      corpoTabela.innerHTML = '';
+      corpoEstoqueBaixo.innerHTML = '';
+      ok = quase = vencida = 0;
+
+      const listaFinal = [...filtroPrincipal.values()].sort((a, b) => {
+        const prioridade = status => status.includes("VENCIDA") ? 0 : status.includes("QUASE") ? 1 : 2;
+        const pA = prioridade(a.status);
+        const pB = prioridade(b.status);
+        if (pA !== pB) return pA - pB;
+        return a.vacina.localeCompare(b.vacina);
+      });
+
+      listaFinal.forEach(item => {
+        if (filtro && item.vacina !== filtro) return;
+
+        const linha = document.createElement('tr');
+        const statusLimpo = item.status.replace(/[^\w\s]/gi, '').toUpperCase();
+
+        const statusClasse = statusLimpo.includes('VENCIDA') ? 'vencida'
+                        : statusLimpo.includes('QUASE') ? 'quase' : 'ok';
+        const rowClass = statusLimpo.includes("VENCIDA") ? "blink-red"
+                        : statusLimpo.includes("QUASE") ? "blink-yellow" : "";
+        linha.className = rowClass;
+
+        linha.innerHTML = `
+          <td>${item.vacina}</td>
+          <td>${item.lote}</td>
+          <td>${item.quantidade}</td>
+          <td>${item.validade}</td>
+          <td class="${statusClasse}">${item.status}</td>
+          <td>${statusLimpo.includes('VENCIDA') ? `<button onclick="desprezar('${item.vacina}', '${item.lote}')">Desprezar</button>` : ''}</td>
+        `;
+        corpoTabela.appendChild(linha);
+
+        if (item.status.includes('VENCIDA')) {
+          vencida++;
+          audio.play();
+        } else if (item.status.includes('QUASE')) {
+          quase++;
+        } else {
+          ok++;
+        }
+
+        if (parseInt(item.quantidade) <= 3) {
+          const alerta = document.createElement('tr');
+          alerta.innerHTML = `
+            <td>${item.vacina}</td>
+            <td>${item.lote}</td>
+            <td>${item.quantidade}</td>
+          `;
+          corpoEstoqueBaixo.appendChild(alerta);
+        }
+      });
+    }
+
+    function renderizarSecundario() {
+      corpoSecundario.innerHTML = '';
+      candidatosSecundarios.forEach(item => {
+        const linha = document.createElement('tr');
+        linha.innerHTML = `
+          <td>${item.vacina}</td>
+          <td>${item.lote}</td>
+          <td>${item.quantidade}</td>
+          <td>${item.validade}</td>
+        `;
+        corpoSecundario.appendChild(linha);
+      });
+    }
+
+    function atualizarContadores() {
+      document.getElementById('ok-count').textContent = ok;
+      document.getElementById('quase-count').textContent = quase;
+      document.getElementById('vencida-count').textContent = vencida;
+      document.getElementById('total-doses').textContent = totalDoses;
+      document.getElementById('last-update').textContent = 'Última atualização: ' + new Date().toLocaleString('pt-BR');
+    }
+
+    function desprezar(vacina, lote) {
+      const index = dados.findIndex(d => d.vacina === vacina && d.lote === lote);
+      if (index !== -1) {
+        dados.splice(index, 1);
+        prepararDados();
+        renderizarPainel();
+        renderizarSecundario();
+        atualizarContadores();
+      }
+    }
+
+    function filtrarVacinas() {
+      const filtro = filtroSelect.value;
+      renderizarPainel(filtro);
+    }
+
+    // Início automático
+    fetchDados();
+  </script>
+</body>
+</html>
