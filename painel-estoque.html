@@ -1,358 +1,248 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Painel de Estoque de Vacinas</title>
-  <meta http-equiv="refresh" content="60">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --bg: #121212;
+      --text: #f1f1f1;
+      --highlight: #0d6efd;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background-color: #111;
-      color: #f2f2f2;
-      margin: 0;
-      padding: 20px;
+      padding: 2rem;
+      background-color: var(--bg);
+      color: var(--text);
     }
-    .top-bar {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-bottom: 20px;
+
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      background-color: #1e1e1e;
+      color: var(--text);
+      overflow: hidden;
     }
-    .logo {
-      height: 60px;
-    }
-    h1 {
-      margin: 0;
-      color: #00d8ff;
-    }
-    button {
-      background-color: #00d8ff;
-      color: #111;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 5px;
-      cursor: pointer;
+
+    .card-header {
       font-weight: bold;
-      margin-left: auto;
+      font-size: 1.1rem;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 1.2em;
+
+    .card-body.scrollable {
+      max-height: 250px;
+      overflow-y: auto;
     }
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #333;
+
+    .card-body.scrollable-lg {
+      max-height: 400px;
+      overflow-y: auto;
     }
-    th {
-      background-color: #222;
-      color: #00d8ff;
+
+    .btn-3d {
+      background-color: var(--highlight);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.3rem 0.8rem;
+      font-weight: bold;
+      box-shadow: 0 4px #0b5ed7;
+      transition: all 0.2s ease-in-out;
+      cursor: pointer;
     }
-    .ok { color: #00ff00; }
-    .quase { color: #ffcc00; }
-    .vencida { color: #ff3333; }
+
+    .btn-3d:hover {
+      box-shadow: 0 2px #0a53be;
+      transform: translateY(1px);
+    }
+
+    .btn-3d:active {
+      box-shadow: 0 1px #084298;
+      transform: translateY(2px);
+    }
+
+    .status-quase td, .status-quase td span {
+      animation: blink-yellow 2s infinite;
+    }
+
+    .status-vencida td, .status-vencida td span {
+      animation: blink-red 2s infinite;
+    }
+
+    @keyframes blink-yellow {
+      0%, 100% { background-color: #b58e00; }
+      50% { background-color: #ffc107; }
+    }
 
     @keyframes blink-red {
-      0% { background-color: #330000; }
-      50% { background-color: #ff0000; }
-      100% { background-color: #330000; }
+      0%, 100% { background-color: #8b1a1a; }
+      50% { background-color: #dc3545; }
     }
-    @keyframes blink-yellow {
-      0% { background-color: #332b00; }
-      50% { background-color: #e6b800; }
-      100% { background-color: #332b00; }
-    }
-    .blink-red { animation: blink-red 3s infinite; }
-    .blink-yellow { animation: blink-yellow 3s infinite; }
 
-    .contadores, .filtros {
-      margin-top: 20px;
-      font-size: 1em;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
+    ::-webkit-scrollbar {
+      width: 8px;
     }
-    .contadores span {
-      font-weight: bold;
+    ::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 4px;
     }
-    #last-update {
-      margin-top: 10px;
-      text-align: right;
-      font-size: 0.9em;
-      color: #888;
-    }
-    .painel-secundario, .estoque-baixo {
-      width: 48%;
-    }
-    .rodape {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 40px;
-      gap: 4%;
-      flex-wrap: wrap;
-    }
-    .painel-secundario h2, .estoque-baixo h2 {
-      font-size: 1.4em;
-      margin-bottom: 10px;
-    }
-    select {
-      padding: 6px;
-      border-radius: 5px;
-      border: none;
-      background-color: #222;
-      color: #fff;
-    }
-    .estoque-baixo h2 { color: #ff3333; }
-    .painel-secundario h2 { color: #00d8ff; }
-
-    @media (max-width: 768px) {
-      .rodape {
-        flex-direction: column;
-        gap: 20px;
-      }
-      .painel-secundario, .estoque-baixo {
-        width: 100%;
-      }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #777;
     }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <img src="https://via.placeholder.com/150x60?text=LOGO" alt="Logo da Empresa" class="logo">
-    <h1>📦 Painel de Estoque de Vacinas</h1>
-    <button onclick="document.documentElement.requestFullscreen();">🖥️ Tela Cheia</button>
-  </div>
 
-  <div class="filtros">
-    <div>
-      <label for="filtro">🔍 Filtrar Vacina:</label>
-      <select id="filtro" onchange="filtrarVacinas()">
-        <option value="">Todas</option>
-      </select>
-    </div>
-    <div class="contadores">
-      ✅ OK: <span id="ok-count">0</span> &nbsp;&nbsp;
-      ⚠️ Quase Vencendo: <span id="quase-count">0</span> &nbsp;&nbsp;
-      🚫 Vencidas: <span id="vencida-count">0</span> &nbsp;&nbsp;
-      💉 Total de Doses: <span id="total-doses">0</span>
-    </div>
-  </div>
+  <div class="container-fluid">
+    <h2 class="text-center mb-4 text-light">📊 Painel de Estoque de Vacinas</h2>
 
-  <table id="painel">
-    <thead>
-      <tr>
-        <th>Vacina</th>
-        <th>Lote</th>
-        <th>Quantidade</th>
-        <th>Validade</th>
-        <th>Status</th>
-        <th>Ações</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header bg-primary text-white">💉 Vacinas em Uso</div>
+          <div class="card-body scrollable-lg">
+            <table class="table table-bordered table-hover table-sm mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Vacina</th>
+                  <th>Lote</th>
+                  <th>Laboratório</th>
+                  <th>Quantidade</th>
+                  <th>Validade</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-estoque"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-  <div class="rodape">
-    <div class="painel-secundario">
-      <h2>🔄 Lotes Alternativos em Estoque</h2>
-      <table id="painel-secundario">
-        <thead>
-          <tr>
-            <th>Vacina</th>
-            <th>Lote</th>
-            <th>Quantidade</th>
-            <th>Validade</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-danger text-white">🚨 Estoque Baixo</div>
+          <div class="card-body scrollable p-0">
+            <table class="table table-sm table-striped table-hover mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Vacina</th>
+                  <th>Lote</th>
+                  <th>Quantidade</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-baixo-estoque"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-    <div class="estoque-baixo">
-      <h2>📉 Vacinas com Estoque Baixo</h2>
-      <table id="estoque-baixo-table">
-        <thead>
-          <tr>
-            <th>Vacina</th>
-            <th>Lote</th>
-            <th>Quantidade</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <div class="col-md-6 col-lg-4">
+        <div class="card">
+          <div class="card-header bg-dark text-white">📦 Resumo por Vacina</div>
+          <div class="card-body scrollable p-0">
+            <table class="table table-sm table-striped mb-0">
+              <thead class="table-dark">
+                <tr>
+                  <th>Vacina</th>
+                  <th>Total de Doses</th>
+                </tr>
+              </thead>
+              <tbody id="tabela-resumo"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <p id="last-update"></p>
-  <audio id="alerta-audio" src="https://www.soundjay.com/button/sounds/beep-07.mp3" preload="auto"></audio>
+  <!-- Modal -->
+  <div class="modal fade" id="descarteModal" tabindex="-1" aria-labelledby="descarteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content text-dark">
+        <div class="modal-header">
+          <h5 class="modal-title" id="descarteModalLabel">Desprezar Vacina</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body">
+          Tem certeza de que deseja desprezar essa vacina? Essa ação é irreversível.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger">Confirmar Descarte</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const URL_PLANILHA = "https://script.google.com/macros/s/AKfycbwd3FlB0Yqbx8Xw3Ncufa7a3M2Lk76fG34O7D4p8yj0vQmQAlBzk_37zrdzrW0TBMIcUA/exec";
+    async function carregarDados() {
+      try {
+        const response = await fetch("https://script.google.com/macros/s/AKfycbwmho4oHFdo0KlwfE7Joyj1Mnou8LAG-hqwG4vnn6E-MMrqjN_rzSArXDS8SQXjNiIcaA/exec"); // ⛔ Troque pela URL da sua API
+        const json = await response.json();
 
-    const corpoTabela = document.querySelector('#painel tbody');
-    const corpoSecundario = document.querySelector('#painel-secundario tbody');
-    const corpoEstoqueBaixo = document.querySelector('#estoque-baixo-table tbody');
-    const filtroSelect = document.getElementById('filtro');
-    const audio = document.getElementById('alerta-audio');
+        const tabelaEstoque = document.getElementById("tabela-estoque");
+        const tabelaResumo = document.getElementById("tabela-resumo");
+        const tabelaBaixo = document.getElementById("tabela-baixo-estoque");
 
-    let dados = [];
-    let ok = 0, quase = 0, vencida = 0, totalDoses = 0;
-    const vacinasUnicas = new Set();
-    const filtroPrincipal = new Map();
-    const candidatosSecundarios = [];
+        tabelaEstoque.innerHTML = "";
+        tabelaResumo.innerHTML = "";
+        tabelaBaixo.innerHTML = "";
 
-    function fetchDados() {
-      fetch(URL_PLANILHA)
-        .then(response => response.json())
-        .then(json => {
-          dados = json.data || []; // <== adapta ao formato retornado
-          prepararDados();
-          renderizarPainel();
-          renderizarSecundario();
-          atualizarContadores();
-        })
-        .catch(error => {
-          console.error("Erro ao carregar dados:", error);
-        });
-    }
+        json.data.forEach(item => {
+          const linha = document.createElement("tr");
 
-    function prepararDados() {
-      ok = quase = vencida = totalDoses = 0;
-      filtroPrincipal.clear();
-      candidatosSecundarios.length = 0;
-      vacinasUnicas.clear();
-
-      dados.forEach(item => {
-        vacinasUnicas.add(item.vacina);
-        totalDoses += parseInt(item.quantidade);
-        if (!filtroPrincipal.has(item.vacina)) {
-          filtroPrincipal.set(item.vacina, item);
-        } else {
-          const atual = filtroPrincipal.get(item.vacina);
-          const dataAtual = new Date(atual.validade.split("/").reverse().join("-"));
-          const dataNovo = new Date(item.validade.split("/").reverse().join("-"));
-          if (dataNovo < dataAtual) {
-            candidatosSecundarios.push(atual);
-            filtroPrincipal.set(item.vacina, item);
-          } else {
-            candidatosSecundarios.push(item);
+          if (item.status.includes("VENCIDA")) {
+            linha.classList.add("status-vencida", "text-white");
+          } else if (item.status.includes("QUASE")) {
+            linha.classList.add("status-quase", "text-dark");
           }
-        }
-      });
 
-      filtroSelect.innerHTML = '<option value="">Todas</option>';
-      vacinasUnicas.forEach(v => {
-        const option = document.createElement('option');
-        option.value = v;
-        option.textContent = v;
-        filtroSelect.appendChild(option);
-      });
-    }
-
-    function renderizarPainel(filtro = "") {
-      corpoTabela.innerHTML = '';
-      corpoEstoqueBaixo.innerHTML = '';
-      ok = quase = vencida = 0;
-
-      const listaFinal = [...filtroPrincipal.values()].sort((a, b) => {
-        const prioridade = status => status.includes("VENCIDA") ? 0 : status.includes("QUASE") ? 1 : 2;
-        const pA = prioridade(a.status);
-        const pB = prioridade(b.status);
-        if (pA !== pB) return pA - pB;
-        return a.vacina.localeCompare(b.vacina);
-      });
-
-      listaFinal.forEach(item => {
-        if (filtro && item.vacina !== filtro) return;
-
-        const linha = document.createElement('tr');
-        const statusLimpo = item.status.replace(/[^\w\s]/gi, '').toUpperCase();
-
-        const statusClasse = statusLimpo.includes('VENCIDA') ? 'vencida'
-                        : statusLimpo.includes('QUASE') ? 'quase' : 'ok';
-        const rowClass = statusLimpo.includes("VENCIDA") ? "blink-red"
-                        : statusLimpo.includes("QUASE") ? "blink-yellow" : "";
-        linha.className = rowClass;
-
-        linha.innerHTML = `
-          <td>${item.vacina}</td>
-          <td>${item.lote}</td>
-          <td>${item.quantidade}</td>
-          <td>${item.validade}</td>
-          <td class="${statusClasse}">${item.status}</td>
-          <td>${statusLimpo.includes('VENCIDA') ? `<button onclick="desprezar('${item.vacina}', '${item.lote}')">Desprezar</button>` : ''}</td>
-        `;
-        corpoTabela.appendChild(linha);
-
-        if (item.status.includes('VENCIDA')) {
-          vencida++;
-          audio.play();
-        } else if (item.status.includes('QUASE')) {
-          quase++;
-        } else {
-          ok++;
-        }
-
-        if (parseInt(item.quantidade) <= 3) {
-          const alerta = document.createElement('tr');
-          alerta.innerHTML = `
+          linha.innerHTML = `
             <td>${item.vacina}</td>
             <td>${item.lote}</td>
+            <td>${item.laboratorio || "-"}</td>
             <td>${item.quantidade}</td>
+            <td>${item.validade}</td>
+            <td><span class="badge ${item.status.includes('VENCIDA') ? 'bg-danger' : item.status.includes('QUASE') ? 'bg-warning text-dark' : 'bg-success'}">${item.status}</span></td>
+            <td><button class="btn-3d" onclick="abrirModal()">Ver</button></td>
           `;
-          corpoEstoqueBaixo.appendChild(alerta);
-        }
-      });
-    }
+          tabelaEstoque.appendChild(linha);
 
-    function renderizarSecundario() {
-      corpoSecundario.innerHTML = '';
-      candidatosSecundarios.forEach(item => {
-        const linha = document.createElement('tr');
-        linha.innerHTML = `
-          <td>${item.vacina}</td>
-          <td>${item.lote}</td>
-          <td>${item.quantidade}</td>
-          <td>${item.validade}</td>
-        `;
-        corpoSecundario.appendChild(linha);
-      });
-    }
+          if (item.quantidade <= 3) {
+            const linhaBaixo = document.createElement("tr");
+            linhaBaixo.innerHTML = `
+              <td>${item.vacina}</td>
+              <td>${item.lote}</td>
+              <td>${item.quantidade}</td>
+            `;
+            tabelaBaixo.appendChild(linhaBaixo);
+          }
+        });
 
-    function atualizarContadores() {
-      document.getElementById('ok-count').textContent = ok;
-      document.getElementById('quase-count').textContent = quase;
-      document.getElementById('vencida-count').textContent = vencida;
-      document.getElementById('total-doses').textContent = totalDoses;
-      document.getElementById('last-update').textContent = 'Última atualização: ' + new Date().toLocaleString('pt-BR');
-    }
-
-    function desprezar(vacina, lote) {
-      const index = dados.findIndex(d => d.vacina === vacina && d.lote === lote);
-      if (index !== -1) {
-        dados.splice(index, 1);
-        prepararDados();
-        renderizarPainel();
-        renderizarSecundario();
-        atualizarContadores();
+        json.resumo.forEach(item => {
+          const linhaResumo = document.createElement("tr");
+          linhaResumo.innerHTML = `
+            <td>${item.vacina}</td>
+            <td>${item.total}</td>
+          `;
+          tabelaResumo.appendChild(linhaResumo);
+        });
+      } catch (e) {
+        console.error("Erro ao carregar dados da API:", e);
       }
     }
 
-    function filtrarVacinas() {
-      const filtro = filtroSelect.value;
-      renderizarPainel(filtro);
+    function abrirModal() {
+      const modal = new bootstrap.Modal(document.getElementById('descarteModal'));
+      modal.show();
     }
 
-    // Início automático
-    fetchDados();
+    document.addEventListener("DOMContentLoaded", carregarDados);
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
-
-
