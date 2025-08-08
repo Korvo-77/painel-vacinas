@@ -186,7 +186,7 @@
 
     async function carregarDados() {
       try {
-        const response = await fetch("https://script.google.com/macros/s/AKfycbxbGCi76XzJOEQCsvs5mhb4mLpVaGNE7sKxs6yTzzPZnnrqY7N3ubDO4WL6r0ZJzdi6FA/exec");
+        const response = await fetch("https://script.google.com/macros/s/AKfycbzyPPzdujHb-3Wmp9bwsXhLDrhkbM5_Z1mYLXKdvSfPBzCokZVXRRKBEW2zAUNnHpRXCQ/exec");
         const json = await response.json();
         dadosEstoqueGlobal = json.data;
 
@@ -282,7 +282,7 @@
       const payload = { vacina, lote, quantidade: Number(quantidade), responsavel };
 
       try {
-        const resposta = await fetch('https://script.google.com/macros/s/AKfycbxbGCi76XzJOEQCsvs5mhb4mLpVaGNE7sKxs6yTzzPZnnrqY7N3ubDO4WL6r0ZJzdi6FA/exec', {
+        const resposta = await fetch('https://script.google.com/macros/s/AKfycbzyPPzdujHb-3Wmp9bwsXhLDrhkbM5_Z1mYLXKdvSfPBzCokZVXRRKBEW2zAUNnHpRXCQ/exec', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -332,3 +332,4 @@
   </div>
 </body>
 </html>
+
